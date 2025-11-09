@@ -3,37 +3,37 @@ import { Linkedin, Mail } from "lucide-react";
 
 const teamMembers = [
   {
-    name: "Dr. Sarah Mwangi",
-    role: "Chief Veterinary Officer",
-    description: "25+ years experience in veterinary medicine and pharmaceutical distribution",
+    name: "Dr. Josiah Mandieka",
+    role: "Managing Director",
+    description: "experience in veterinary medicine and pharmaceutical distribution",
     specialty: "Large Animal Medicine"
   },
   {
-    name: "James Ochieng",
+    name: "Stella",
     role: "Managing Director",
     description: "Expert in pharmaceutical supply chain and business development",
     specialty: "Operations & Strategy"
   },
   {
-    name: "Dr. Grace Akinyi",
+    name: "Henry",
     role: "Technical Director",
     description: "Specialist in veterinary pharmacology and drug regulation compliance",
     specialty: "Pharmacology"
   },
   {
-    name: "Peter Kamau",
+    name: "Obadiah",
     role: "Head of Sales",
     description: "Building strong partnerships with veterinary clinics nationwide",
     specialty: "Client Relations"
   },
   {
-    name: "Dr. Michael Otieno",
+    name: "Catherine Mandieka",
     role: "Quality Assurance Manager",
     description: "Ensuring the highest standards in product quality and safety",
     specialty: "Quality Control"
   },
   {
-    name: "Emily Wanjiku",
+    name: "Constance",
     role: "Customer Service Manager",
     description: "Dedicated to providing exceptional service and support",
     specialty: "Customer Care"
