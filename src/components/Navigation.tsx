@@ -9,10 +9,10 @@ const Navigation = () => {
 
   const navLinks = [
     { name: "Home", path: "/" },
-    { name: "About", path: "/about" },
-    { name: "Products", path: "/products" },
-    { name: "Impact Stories", path: "/stories" },
-    { name: "Our Team", path: "/team" },
+    // { name: "About", path: "/about" },
+    // { name: "Products", path: "/products" },
+    // { name: "Impact Stories", path: "/stories" },
+    // { name: "Our Team", path: "/team" },
     { name: "Contact", path: "/contact" },
   ];
 

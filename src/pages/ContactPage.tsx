@@ -44,8 +44,7 @@ const ContactPage = () => {
                         </div>
                         <div>
                           <h3 className="font-semibold text-lg mb-1">Phone</h3>
-                          <p className="text-muted-foreground">+254 700 000 000</p>
-                          <p className="text-muted-foreground">+254 711 111 111</p>
+                          <p className="text-muted-foreground">+254 20 2430331</p>
                         </div>
                       </div>
                     </CardContent>
@@ -60,7 +59,7 @@ const ContactPage = () => {
                         <div>
                           <h3 className="font-semibold text-lg mb-1">Email</h3>
                           <p className="text-muted-foreground">info@ultimatevetserve.com</p>
-                          <p className="text-muted-foreground">sales@ultimatevetserve.com</p>
+                          <p className="text-muted-foreground">accounts@ultimatevetserve.com</p>
                         </div>
                       </div>
                     </CardContent>
@@ -89,8 +88,8 @@ const ContactPage = () => {
                         </div>
                         <div>
                           <h3 className="font-semibold text-lg mb-1">Business Hours</h3>
-                          <p className="text-muted-foreground">Mon-Fri: 8:00 AM - 6:00 PM</p>
-                          <p className="text-muted-foreground">Sat: 9:00 AM - 2:00 PM</p>
+                          <p className="text-muted-foreground">Mon-Fri: 8:00 AM - 4:30 PM</p>
+                          {/* <p className="text-muted-foreground">Sat: 9:00 AM - 2:00 PM</p> */}
                         </div>
                       </div>
                     </CardContent>

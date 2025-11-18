@@ -1,70 +1,66 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pill, Syringe, Heart, Shield, Bug, Droplets } from "lucide-react";
+import { Pill, Syringe, Heart, Shield, Bug, Droplets, PillIcon } from "lucide-react";
+import { pid } from "process";
 
 const products = [
   {
-    category: "Antibiotics",
-    icon: Shield,
+    category: "Injectables",
+    icon: Syringe,
     items: [
-      { name: "Oxytetracycline Injectable 20%", stock: "In Stock" },
-      { name: "Penicillin G Procaine", stock: "In Stock" },
-      { name: "Enrofloxacin Tablets", stock: "Available" },
-      { name: "Tylosin Injection", stock: "In Stock" }
+      { name: "ULTICYCLINE 20%", stock: "In Stock" },
+      { name: "ULTICYCLINE 10%", stock: "In Stock" },
+      { name: "ULTYLOSIN 20%", stock: "Available" },
+      { name: "ULTIVITA", stock: "In Stock" },
+      { name: "ULTIMECTIN", stock: "In Stock" },
+      { name: "ULTIBUPA 50", stock: "In Stock" },
+      { name: "ULTIMAST IMM", stock: "In Stock" },
+      { name: "ULTIGENTA", stock: "In Stock" },
+      { name: "ULTISTREP", stock: "In Stock" }
+      
+    ]
+  },
+  {
+    category: "Boluses and De-wormers",
+    icon: PillIcon,
+    items: [
+      { name: "ALBENSERVE 2500", stock: "In Stock" },
+      { name: "ALBENSERVE 300", stock: "Available" },
+    ]
+  },
+  {
+    category: "Powder range/ water solubles",
+    icon: Bug,
+    items: [
+      { name: "ULTIVITA SUPER LAYER", stock: "In Stock" },
+      { name: "ULTIVITA BROILER", stock: "Available" },
+      { name: "ULTIVITA MULTIVITAMIN & MINERALS", stock: "In Stock" },
+      { name: "ULTYLODOX", stock: "In Stock" },
+      { name: "ULTIVITA CHICKBOOST", stock: "In Stock" },
+      { name: "ULTISULMIX", stock: "In Stock" }
+    
     ]
   },
   {
     category: "Vaccines",
-    icon: Syringe,
-    items: [
-      { name: "Newcastle Disease Vaccine", stock: "In Stock" },
-      { name: "Foot and Mouth Disease Vaccine", stock: "Available" },
-      { name: "Rabies Vaccine (Canine/Feline)", stock: "In Stock" },
-      { name: "Brucellosis Vaccine", stock: "In Stock" }
-    ]
-  },
-  {
-    category: "Antiparasitics",
-    icon: Bug,
-    items: [
-      { name: "Ivermectin Injectable 1%", stock: "In Stock" },
-      { name: "Albendazole Oral Suspension", stock: "Available" },
-      { name: "Flea & Tick Treatment", stock: "In Stock" },
-      { name: "Deworming Tablets", stock: "In Stock" }
-    ]
-  },
-  {
-    category: "Supplements",
-    icon: Heart,
-    items: [
-      { name: "Multivitamin Injectable", stock: "In Stock" },
-      { name: "Calcium Borogluconate", stock: "Available" },
-      { name: "Vitamin B-Complex", stock: "In Stock" },
-      { name: "Probiotics for Livestock", stock: "In Stock" }
-    ]
-  },
-  {
-    category: "Pain Management",
-    icon: Pill,
-    items: [
-      { name: "Meloxicam Injectable", stock: "In Stock" },
-      { name: "Ketoprofen Injection", stock: "Available" },
-      { name: "Tramadol Tablets", stock: "In Stock" },
-      { name: "Butorphanol Injectable", stock: "Available" }
-    ]
-  },
-  {
-    category: "Fluids & Electrolytes",
     icon: Droplets,
     items: [
-      { name: "Ringer's Lactate Solution", stock: "In Stock" },
-      { name: "Saline Solution 0.9%", stock: "In Stock" },
-      { name: "Dextrose 5% Solution", stock: "Available" },
-      { name: "Oral Rehydration Salts", stock: "In Stock" }
+      { name: "BIOVAC (Fowl Pox)", stock: "In Stock" },
+      { name: "BIOVAC (Newcastle Disease)", stock: "Available" },
+      { name: "BIOVAC (Newcastle LaSota)", stock: "In Stock" },
+      { name: "BIOVAC (Gumboro)", stock: "In Stock" }
     ]
-  }
-];
+  },
+  {
+    category: "DISINFECTANTS & SALVES",
+    icon: Pill,
+    items: [
+      { name: "ULTICIDE DISINFECTANT", stock: "In Stock" },
+      { name: "MILKING SALVE", stock: "Available" }
+    ]
+  },
+  ];
 
 const Products = () => {
   return (
