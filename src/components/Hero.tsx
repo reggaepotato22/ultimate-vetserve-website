@@ -1,55 +1,66 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
-import logo from "@/assets/uvs-logo.png";
 import heroAnimals from "@/assets/hero-animals.jpg";
 
 const Hero = () => {
   return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${heroAnimals})` }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/80 via-primary/70 to-secondary/80"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/70 to-transparent"></div>
       </div>
       
       <div className="container mx-auto px-4 py-20 relative z-10">
-        <div className="flex flex-col items-center text-center space-y-8 max-w-4xl mx-auto">
-          <img 
-            src={logo} 
-            alt="Ultimate Vetserve Limited" 
-            className="w-64 h-auto animate-fade-in drop-shadow-2xl"
-          />
+        <div className="flex flex-col items-start text-left space-y-8 max-w-3xl">
+          <div className="inline-block bg-primary/20 backdrop-blur-sm border border-primary/30 rounded-full px-4 py-1.5 mb-2">
+            <span className="text-blue-100 font-medium text-sm tracking-wide uppercase">Trusted Veterinary Partner</span>
+          </div>
           
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight drop-shadow-lg">
-            We Care For Your{" "}
-            <span className="text-white">Animals</span>
+          <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-white leading-tight drop-shadow-lg">
+            Quality Animal <br/>
+            <span className="text-white inline-block mt-2">Health Solutions</span> <br/>
           </h1>
           
-          <p className="text-xl md:text-2xl text-white/95 max-w-2xl drop-shadow-md">
-            Premium veterinary pharmaceuticals and supplies for the health and wellbeing 
-            of livestock and companion animals across the nation.
+          <p className="text-lg md:text-xl text-gray-200 max-w-xl leading-relaxed">
+            We provide certified pharmaceutical products and expert veterinary advice to ensure the health and productivity of your livestock and pets.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Link to="/products">
-              <Button 
-                size="lg" 
-                className="text-lg px-8 py-6 bg-white text-primary hover:bg-white/90 shadow-2xl hover:shadow-3xl transition-all font-semibold"
-              >
-                Browse Products <ArrowRight className="ml-2" />
-              </Button>
-            </Link>
+          <div className="flex flex-col sm:flex-row gap-4 pt-4 w-full sm:w-auto">
             <Link to="/contact">
               <Button 
                 size="lg" 
-                variant="outline" 
-                className="text-lg px-8 py-6 border-2 border-white text-primary hover:bg-white/20 font-semibold"
+                className="w-full sm:w-auto text-base px-8 py-6 bg-primary text-white hover:bg-blue-600 shadow-xl hover:shadow-2xl transition-all rounded-full font-semibold"
               >
-                Contact Us
+                Get a Quote <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
+            <a href="tel:+254724241542">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="w-full sm:w-auto text-base px-8 py-6 border-2 border-white text-white hover:bg-white hover:text-gray-900 rounded-full font-semibold transition-all bg-transparent"
+              >
+                <Phone className="mr-2 w-5 h-5" /> Call Now
+              </Button>
+            </a>
+          </div>
+
+          <div className="flex items-center gap-8 pt-8 text-white/80 text-sm font-medium">
+             <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span>Certified Products</span>
+             </div>
+             <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span>Nationwide Delivery</span>
+             </div>
+             <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span>Expert Support</span>
+             </div>
           </div>
         </div>
       </div>
