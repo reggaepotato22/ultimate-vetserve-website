@@ -1,8 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pill, Syringe, Heart, Shield, Bug, Droplets, PillIcon } from "lucide-react";
-import { pid } from "process";
+import { Syringe, FlaskConical, TestTube, ShieldCheck, Pill } from "lucide-react";
 
 const products = [
   {
@@ -23,7 +22,7 @@ const products = [
   },
   {
     category: "Boluses and De-wormers",
-    icon: PillIcon,
+    icon: Pill,
     items: [
       { name: "ALBENSERVE 2500", stock: "In Stock" },
       { name: "ALBENSERVE 300", stock: "Available" },
@@ -31,7 +30,7 @@ const products = [
   },
   {
     category: "Powder range/ water solubles",
-    icon: Bug,
+    icon: FlaskConical,
     items: [
       { name: "ULTIVITA SUPER LAYER", stock: "In Stock" },
       { name: "ULTIVITA BROILER", stock: "Available" },
@@ -44,7 +43,7 @@ const products = [
   },
   {
     category: "Vaccines",
-    icon: Droplets,
+    icon: TestTube,
     items: [
       { name: "BIOVAC (Fowl Pox)", stock: "In Stock" },
       { name: "BIOVAC (Newcastle Disease)", stock: "Available" },
@@ -54,7 +53,7 @@ const products = [
   },
   {
     category: "DISINFECTANTS & SALVES",
-    icon: Pill,
+    icon: ShieldCheck,
     items: [
       { name: "ULTICIDE DISINFECTANT", stock: "In Stock" },
       { name: "MILKING SALVE", stock: "Available" }

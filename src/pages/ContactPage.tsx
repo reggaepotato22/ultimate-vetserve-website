@@ -1,19 +1,44 @@
+import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { ContactForm } from "@/components/ContactForm";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Camera } from "lucide-react";
+
+const WHATSAPP_NUMBER = "254724241542";
+const WHATSAPP_DIRECTIONS_MSG = encodeURIComponent("Hello, I'd like to get directions to Ultimate House, Oloolua, Ngong.");
+
+const DEFAULT_CONTACT_HERO = "https://images.unsplash.com/photo-1596526134530-727856838726?auto=format&fit=crop&q=80&w=1600";
 
 const ContactPage = () => {
+  const [heroImage, setHeroImage] = useState(DEFAULT_CONTACT_HERO);
+
+  const handleHeroUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setHeroImage(URL.createObjectURL(file));
+  };
+
   return (
     <div className="min-h-screen flex flex-col font-sans">
       <Navigation />
-      <main className="flex-1 bg-gray-50">
-        <div className="bg-primary py-20 text-white relative overflow-hidden">
-           <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1576201836163-49758479d1b4?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-10 mix-blend-multiply"></div>
+      <main className="flex-1 bg-zinc-50/50">
+        {/* Hero Banner */}
+        <div className="relative bg-zinc-950 py-20 text-white overflow-hidden group">
+          <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroImage})` }} />
+          <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/98 via-zinc-950/92 to-zinc-900/80" />
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/70 via-transparent to-zinc-950/20" />
+          <div className="absolute inset-0 bg-grid-green opacity-20" />
+          {/* Upload button */}
+          <label className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20 text-white text-[11px] font-semibold px-3 py-2 rounded-full cursor-pointer transition-all opacity-0 group-hover:opacity-100">
+            <Camera className="w-3.5 h-3.5" />
+            Change Background
+            <input type="file" accept="image/*" className="hidden" onChange={handleHeroUpload} />
+          </label>
           <div className="container mx-auto px-4 text-center relative z-10">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">Get in Touch</h1>
-            <p className="text-xl text-blue-100 max-w-2xl mx-auto font-light">
+            <p className="text-[11px] font-bold text-emerald-400 uppercase tracking-[0.2em] mb-4">Reach Out</p>
+            <h1 className="font-display text-[2.8rem] md:text-[3.8rem] font-extrabold mb-4 tracking-tight leading-[1.08]">Get in Touch</h1>
+            <p className="text-zinc-300 text-lg max-w-2xl mx-auto font-light leading-relaxed">
               We are here to assist you with all your veterinary pharmaceutical needs.
             </p>
           </div>
@@ -35,7 +60,7 @@ const ContactPage = () => {
                 <div className="grid sm:grid-cols-2 gap-6">
                   <Card className="border border-gray-100 hover:border-primary/20 hover:shadow-lg transition-all">
                     <CardContent className="pt-8 pb-8 flex flex-col items-center text-center">
-                        <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+                        <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mb-4">
                           <Phone className="w-6 h-6 text-primary" />
                         </div>
                         <h3 className="font-bold text-lg mb-2 text-gray-800">Call Us</h3>
@@ -45,7 +70,7 @@ const ContactPage = () => {
 
                   <Card className="border border-gray-100 hover:border-primary/20 hover:shadow-lg transition-all">
                     <CardContent className="pt-8 pb-8 flex flex-col items-center text-center">
-                        <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+                        <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mb-4">
                           <Mail className="w-6 h-6 text-primary" />
                         </div>
                         <h3 className="font-bold text-lg mb-2 text-gray-800">Email Us</h3>
@@ -53,19 +78,47 @@ const ContactPage = () => {
                     </CardContent>
                   </Card>
 
-                  <Card className="border border-gray-100 hover:border-primary/20 hover:shadow-lg transition-all">
-                    <CardContent className="pt-8 pb-8 flex flex-col items-center text-center">
-                        <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-                          <MapPin className="w-6 h-6 text-primary" />
+                  {/* Stylised map-preview location card */}
+                  <div className="rounded-xl overflow-hidden border border-gray-100 hover:border-primary/20 hover:shadow-lg transition-all">
+                    {/* Faux map area */}
+                    <div
+                      className="relative h-28 flex items-center justify-center bg-[#162b19]"
+                      style={{
+                        backgroundImage:
+                          'linear-gradient(rgba(74,222,128,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(74,222,128,0.07) 1px, transparent 1px)',
+                        backgroundSize: '18px 18px',
+                      }}
+                    >
+                      <div className="absolute w-20 h-20 rounded-full border border-primary/20"></div>
+                      <div className="absolute w-12 h-12 rounded-full border border-primary/35"></div>
+                      <div className="relative z-10 flex flex-col items-center">
+                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-black/40">
+                          <MapPin className="w-5 h-5 text-white" strokeWidth={2.5} />
                         </div>
-                        <h3 className="font-bold text-lg mb-2 text-gray-800">Visit Us</h3>
-                        <p className="text-gray-600 font-medium">Nairobi, Kenya</p>
-                    </CardContent>
-                  </Card>
+                        <div className="w-2 h-2 bg-primary/70 rounded-full mt-0.5"></div>
+                      </div>
+                    </div>
+                    {/* Address + action */}
+                    <div className="bg-white px-4 py-4 flex flex-col items-center text-center gap-3">
+                      <div>
+                        <p className="text-gray-800 text-sm font-bold">Visit Us</p>
+                        <p className="text-gray-600 text-sm font-medium">Ultimate House, Oloolua</p>
+                        <p className="text-gray-400 text-xs">Ngong, Kenya</p>
+                      </div>
+                      <a
+                        href={`https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_DIRECTIONS_MSG}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full bg-primary hover:bg-primary/85 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors text-center"
+                      >
+                        View on Map
+                      </a>
+                    </div>
+                  </div>
 
                   <Card className="border border-gray-100 hover:border-primary/20 hover:shadow-lg transition-all">
                     <CardContent className="pt-8 pb-8 flex flex-col items-center text-center">
-                        <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+                        <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mb-4">
                           <Clock className="w-6 h-6 text-primary" />
                         </div>
                         <h3 className="font-bold text-lg mb-2 text-gray-800">Opening Hours</h3>

@@ -13,6 +13,17 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["Inter", "Plus Jakarta Sans", "system-ui", "sans-serif"],
+        display: ["Plus Jakarta Sans", "Inter", "system-ui", "sans-serif"],
+      },
+      boxShadow: {
+        xs: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
+        card: "0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)",
+        hover: "0 16px 40px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.06)",
+        premium: "0 28px 64px rgba(0,0,0,0.13), 0 8px 20px rgba(0,0,0,0.07)",
+        primary: "0 8px 24px hsl(145 62% 26% / 0.28)",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

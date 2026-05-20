@@ -1,25 +1,61 @@
-import { Star } from "lucide-react";
+import { BadgeCheck, FlaskConical, Users, MapPin } from "lucide-react";
+
+const stats = [
+  {
+    icon: FlaskConical,
+    value: "500+",
+    label: "Registered Products",
+    sublabel: "Pharmaceutical catalog",
+  },
+  {
+    icon: Users,
+    value: "1,000+",
+    label: "Customers Served",
+    sublabel: "Vets, farmers & clinics",
+  },
+  {
+    icon: MapPin,
+    value: "15+",
+    label: "Counties Covered",
+    sublabel: "Nationwide distribution",
+  },
+  {
+    icon: BadgeCheck,
+    value: "100%",
+    label: "Quality Certified",
+    sublabel: "KVB & KEBS compliant",
+  },
+];
 
 export const SocialProof = () => {
   return (
-    <section className="py-16 bg-white border-t border-gray-100">
+    <section className="py-20 bg-white border-y border-zinc-100" aria-label="Key statistics">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-10">
-          <h3 className="text-2xl font-bold text-gray-800 mb-2">Trusted by Veterinarians Across Kenya</h3>
-          <div className="flex justify-center gap-1 mb-4">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star key={star} className="w-5 h-5 text-yellow-400 fill-current" />
-            ))}
-          </div>
-        </div>
+        {/* Section label */}
+        <p className="text-center text-[11px] font-bold text-zinc-400 uppercase tracking-[0.18em] mb-12">
+          Trusted by professionals across Kenya
+        </p>
 
-        {/* Partner Logos Placeholder */}
-        <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
-            {/* Replace these with actual partner logos */}
-            <div className="text-xl font-bold text-gray-400">VET LABS</div>
-            <div className="text-xl font-bold text-gray-400">KENYA PHARMA</div>
-            <div className="text-xl font-bold text-gray-400">AGRI-SOLUTIONS</div>
-            <div className="text-xl font-bold text-gray-400">FARM CARE</div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-zinc-100 rounded-2xl overflow-hidden shadow-xs">
+          {stats.map(({ icon: Icon, value, label, sublabel }) => (
+            <div
+              key={label}
+              className="group flex flex-col items-center text-center gap-4 bg-white px-6 py-10 hover:bg-primary/[0.025] transition-colors duration-300"
+            >
+              <div className="w-12 h-12 bg-primary/[0.08] group-hover:bg-primary/[0.14] rounded-2xl flex items-center justify-center transition-colors duration-300">
+                <Icon className="w-5.5 h-5.5 text-primary" strokeWidth={1.75} />
+              </div>
+              <div>
+                <p className="font-display text-[2.6rem] font-extrabold text-zinc-900 leading-none tabular-nums tracking-tight">
+                  {value}
+                </p>
+                <p className="text-[14px] font-semibold text-zinc-700 mt-2 leading-tight">
+                  {label}
+                </p>
+                <p className="text-[12px] text-zinc-400 mt-1 font-medium">{sublabel}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
