@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Save, Trash2, Loader2, Users, GripVertical, Upload, X } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { useTeamMembers } from "@/hooks/useData";
 import type { TeamMember } from "@/types/content";
 
 const defaultTeam: TeamMember[] = [
@@ -12,20 +13,27 @@ const defaultTeam: TeamMember[] = [
 ];
 
 const AdminTeam = () => {
+  const { members: supabaseMembers, loading } = useTeamMembers();
   const [members, setMembers] = useState<TeamMember[]>(defaultTeam);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!loading && supabaseMembers.length > 0) {
+      setMembers(supabaseMembers);
+    }
+  }, [loading, supabaseMembers]);
+
   const addMember = () => {
     const newMember: TeamMember = {
       id: Date.now().toString(),
-      name: "", title: "", bio: "", imageUrl: "",
+      name: "", title: "", bio: "", imageUrl: "", visible: true,
       orderIndex: members.length,
     };
     setMembers((prev) => [...prev, newMember]);
   };
 
-  const update = (id: string, key: keyof TeamMember, value: string) =>
+  const update = (id: string, key: keyof TeamMember, value: string | boolean) =>
     setMembers((prev) => prev.map((m) => m.id === id ? { ...m, [key]: value } : m));
 
   const remove = (id: string) => {
@@ -49,12 +57,14 @@ const AdminTeam = () => {
   const handleSave = async () => {
     setSaving(true);
     if (isSupabaseConfigured && supabase) {
-      await supabase.from("team_members").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      const { error: delErr } = await supabase.from("team_members").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      if (delErr) { setSaving(false); alert("Delete failed: " + delErr.message); return; }
       for (const m of members) {
-        await supabase.from("team_members").upsert({
-          id: m.id, name: m.name, title: m.title, bio: m.bio,
-          image_url: m.imageUrl, order_index: m.orderIndex,
+        const { error: insErr } = await supabase.from("team_members").insert({
+          name: m.name, title: m.title, bio: m.bio,
+          image_url: m.imageUrl, visible: m.visible, order_index: m.orderIndex,
         });
+        if (insErr) { setSaving(false); alert("Insert failed: " + insErr.message); return; }
       }
     }
     setSaving(false);
@@ -120,6 +130,26 @@ const AdminTeam = () => {
                   )}
                 </div>
               </div>
+            </div>
+
+            <div className="flex items-center gap-4 mb-4">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Visibility</label>
+              <button
+                type="button"
+                onClick={() => update(member.id, "visible", member.visible === false ? true : false)}
+                className={`relative inline-flex items-center h-7 w-12 rounded-full transition-colors ${
+                  member.visible !== false ? "bg-primary" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`inline-block w-5 h-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                    member.visible !== false ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <span className={`text-xs font-bold ${member.visible !== false ? "text-green-600" : "text-red-400"}`}>
+                {member.visible !== false ? "Visible on site" : "Hidden"}
+              </span>
             </div>
 
             <div>

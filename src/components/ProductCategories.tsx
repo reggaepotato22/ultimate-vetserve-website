@@ -67,7 +67,7 @@ export const ProductCategories = () => {
               id="categories-heading"
               className="font-display text-[2.2rem] md:text-[2.8rem] font-extrabold text-zinc-900 leading-[1.1] tracking-tight"
             >
-              Find Your Products<br className="hidden md:block" /> By Animals
+              Find Your Products for Your Animals
             </h2>
           </div>
           <Link

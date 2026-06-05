@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,25 @@ const empty: Omit<Product, "id"> = {
   name: "", category: "Injectables", categorySlug: "injectables",
   species: [], form: "Injectable", description: "", fullDescription: "",
   activeIngredient: "", dosage: "", withdrawalPeriod: "", storageInfo: "",
-  stock: "In Stock", tags: [], imageUrl: "", featured: false,
+  stock: "In Stock", tags: [], imageUrl: "", featured: false, visible: true,
+};
+
+const Field = ({ label, children }: { label: string; children: ReactNode }) => (
+  <div>
+    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1.5">{label}</label>
+    {children}
+  </div>
+);
+
+const toSnake = (obj: Record<string, unknown>) => {
+  const map: Record<string, string> = {
+    categorySlug: "category_slug", fullDescription: "full_description",
+    activeIngredient: "active_ingredient", withdrawalPeriod: "withdrawal_period",
+    storageInfo: "storage_info", imageUrl: "image_url", orderIndex: "order_index",
+  };
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) out[map[k] ?? k] = v;
+  return out;
 };
 
 const AdminProductForm = () => {
@@ -36,15 +54,42 @@ const AdminProductForm = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [loadingProduct, setLoadingProduct] = useState(!isNew);
 
   useEffect(() => {
     if (!isNew && id) {
-      const p = allProducts.find((x) => x.id === id);
-      if (p) {
-        const { id: _id, ...rest } = p;
-        setForm(rest);
-        setTagInput(p.tags.join(", "));
-      }
+      setLoadingProduct(true);
+      const fetchProduct = async () => {
+        if (isSupabaseConfigured && supabase) {
+          const { data, error } = await supabase.from("products").select("*").eq("id", id).single();
+          if (data && !error) {
+            const p: Product = {
+              id: data.id, name: data.name, category: data.category,
+              categorySlug: data.category_slug, species: data.species ?? [],
+              form: data.form, description: data.description ?? "",
+              fullDescription: data.full_description, activeIngredient: data.active_ingredient,
+              dosage: data.dosage, withdrawalPeriod: data.withdrawal_period,
+              storageInfo: data.storage_info,               stock: data.stock ?? "In Stock",
+              tags: data.tags ?? [], imageUrl: data.image_url,
+              featured: data.featured ?? false, visible: data.visible ?? true,
+              orderIndex: data.order_index,
+            };
+            const { id: _id, ...rest } = p;
+            setForm(rest);
+            setTagInput(p.tags.join(", "));
+            setLoadingProduct(false);
+            return;
+          }
+        }
+        const p = allProducts.find((x) => x.id === id);
+        if (p) {
+          const { id: _id, ...rest } = p;
+          setForm(rest);
+          setTagInput(p.tags.join(", "));
+        }
+        setLoadingProduct(false);
+      };
+      fetchProduct();
     }
   }, [id, isNew]);
 
@@ -75,7 +120,7 @@ const AdminProductForm = () => {
     setError("");
 
     const tags = tagInput.split(",").map((t) => t.trim()).filter(Boolean);
-    const payload = { ...form, tags, categorySlug: CATEGORY_SLUGS[form.category] ?? form.categorySlug };
+    const payload = toSnake({ ...form, tags, categorySlug: CATEGORY_SLUGS[form.category] ?? form.categorySlug });
 
     if (isSupabaseConfigured && supabase) {
       if (isNew) {
@@ -91,13 +136,6 @@ const AdminProductForm = () => {
     navigate("/admin/products");
   };
 
-  const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-    <div>
-      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1.5">{label}</label>
-      {children}
-    </div>
-  );
-
   return (
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center gap-4">
@@ -112,17 +150,25 @@ const AdminProductForm = () => {
         </div>
       </div>
 
-      {!isSupabaseConfigured && (
+      {loadingProduct && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <span className="ml-3 text-sm text-gray-500">Loading product...</span>
+        </div>
+      )}
+
+      {!loadingProduct && !isSupabaseConfigured && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
           <p className="text-amber-700 text-xs">Supabase not connected — changes won't be saved to database.</p>
         </div>
       )}
 
-      {error && (
+      {!loadingProduct && error && (
         <div className="bg-red-50 border border-red-100 rounded-xl p-3 text-red-600 text-sm">{error}</div>
       )}
 
+      {!loadingProduct && <>
       <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
         <h2 className="font-bold text-gray-900 text-sm uppercase tracking-wider border-b border-gray-100 pb-3">Basic Information</h2>
 
@@ -175,6 +221,17 @@ const AdminProductForm = () => {
         <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
           <input type="checkbox" id="featured" checked={!!form.featured} onChange={(e) => set("featured", e.target.checked)} className="w-4 h-4 accent-primary" />
           <label htmlFor="featured" className="text-sm font-medium text-gray-700">Feature this product on the homepage</label>
+        </div>
+        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+          <label className="text-sm font-medium text-gray-700">Visible on public website</label>
+          <button type="button" onClick={() => set("visible", form.visible === false ? true : false)}
+            className={`relative w-11 h-6 rounded-full transition-colors duration-200 ease-in-out ${form.visible !== false ? "bg-primary" : "bg-gray-300"}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ease-in-out ${form.visible !== false ? "translate-x-5" : "translate-x-0"}`} />
+          </button>
+          {form.visible === false && (
+            <span className="text-xs font-bold text-red-500 bg-red-100 px-2 py-0.5 rounded-full">HIDDEN</span>
+          )}
         </div>
       </div>
 
@@ -279,6 +336,7 @@ const AdminProductForm = () => {
           {saving ? "Saving..." : "Save Product"}
         </Button>
       </div>
+      </>}
     </div>
   );
 };

@@ -1,18 +1,22 @@
-import { useState, useMemo, useRef, type ReactNode } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { allProducts, getCategoryConfig } from "@/data/products";
+import { getCategoryConfig } from "@/data/products";
+import { useProducts } from "@/hooks/useData";
 import type { Product } from "@/types/content";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Syringe, Pill, FlaskConical, TestTube, ShieldCheck,
-  Search, Filter, X, ChevronDown, ChevronUp, ChevronRight,
+  Search, X, ChevronRight,
   Stethoscope, Bird, PawPrint, Leaf,
-  MessageCircle, Phone, Send, Loader2, ArrowRight, Check,
-  ShoppingBag, Plus, Minus, Trash2, ClipboardList, Upload, ImagePlus,
-  PackageCheck, BadgeCheck, Camera,
+  MessageCircle, Phone, Send, Loader2, ArrowRight,
+  ShoppingBag, Plus, Minus, Trash2, ClipboardList,
+  PackageCheck, BadgeCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -42,32 +46,7 @@ const stockFilters    = ["In Stock", "Available"];
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type BasketItem = { product: Product; qty: number };
 
-// ─── Image upload slot for product cards ──────────────────────────────────────
-const ProductImageSlot = ({ src, onUpload, category }: { src?: string | null; onUpload: (url: string) => void; category: string }) => {
-  const ref = useRef<HTMLInputElement>(null);
-  const cfg = getCategoryConfig(category);
-  return (
-    <div className="relative group aspect-[4/3] overflow-hidden bg-gradient-to-br from-zinc-100 to-zinc-50 cursor-pointer" onClick={() => ref.current?.click()}>
-      {src ? (
-        <img src={src} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-      ) : (
-        <div className={`w-full h-full flex flex-col items-center justify-center gap-2 ${cfg.bg}`}>
-          <ImagePlus className={`w-10 h-10 ${cfg.color} opacity-50`} />
-          <span className="text-[11px] font-semibold text-zinc-400">Add Product Image</span>
-        </div>
-      )}
-      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-        <div className="flex items-center gap-2 bg-white/90 rounded-full px-4 py-2 text-[12px] font-bold text-zinc-800">
-          <Camera className="w-3.5 h-3.5" />
-          {src ? "Replace Image" : "Upload Image"}
-        </div>
-      </div>
-      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={(e) => {
-        const f = e.target.files?.[0]; if (f) onUpload(URL.createObjectURL(f));
-      }} />
-    </div>
-  );
-};
+
 
 // ─── Inquiry Modal (Single Product) ───────────────────────────────────────────
 const InquiryModal = ({ product, onClose, onAddToBasket }: { product: Product | null; onClose: () => void; onAddToBasket: (p: Product, qty: number) => void }) => {
@@ -85,25 +64,34 @@ const InquiryModal = ({ product, onClose, onAddToBasket }: { product: Product | 
 
   const handleSend = () => {
     setBusy(true);
+    const inquiry = {
+      name: name || "Not provided",
+      phone: phone || "Not provided",
+      message: `Product Inquiry: ${product.name} (${product.category})\nQty: ${qty}\nClinic: ${clinic || "N/A"}\nNotes: ${notes || "N/A"}`,
+      status: "new",
+    };
+    if (isSupabaseConfigured && supabase) {
+      supabase.from("inquiries").insert(inquiry).then().catch(() => {});
+    }
+    fetch(`${API_URL}/api/contact`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...inquiry, email: "info@ultimatevetserve.com", subject: inquiry.message }),
+    }).catch(() => {});
     const lines = [
-      `🐾 *VETERINARY PRODUCT INQUIRY*`,
-      `📋 *Ultimate Vetserve Limited*`,
+      `VETERINARY PRODUCT INQUIRY - Ultimate Vetserve Limited`,
       ``,
-      `*━━ PRODUCT DETAILS ━━*`,
-      `📦 *Product:* ${product.name}`,
-      `🏷️ *Category:* ${product.category}`,
-      product.activeIngredient ? `💊 *Active Ingredient:* ${product.activeIngredient}` : null,
-      `📊 *Availability:* ${product.stock}`,
-      product.dosage ? `💉 *Standard Dosage:* ${product.dosage}` : null,
+      `Product: ${product.name} (${product.category})`,
+      product.activeIngredient ? `Active Ingredient: ${product.activeIngredient}` : null,
+      `Availability: ${product.stock}`,
+      product.dosage ? `Standard Dosage: ${product.dosage}` : null,
       ``,
-      `*━━ INQUIRY DETAILS ━━*`,
-      `👤 *Client Name:* ${name || "Not provided"}`,
-      clinic ? `🏥 *Clinic / Farm:* ${clinic}` : null,
-      `📞 *Contact:* ${phone || "Not provided"}`,
-      `📦 *Quantity Required:* ${qty} unit(s)`,
-      notes ? `📝 *Additional Notes:*\n${notes}` : null,
+      `Customer: ${name || "Not provided"}`,
+      clinic ? `Clinic/Farm: ${clinic}` : null,
+      `Contact: ${phone || "Not provided"}`,
+      `Quantity: ${qty} unit(s)`,
+      notes ? `Notes: ${notes}` : null,
       ``,
-      `_Sent via UltimateVetserve.com_`,
+      `Sent via UltimateVetserve.com`,
     ].filter(Boolean).join("\n");
     window.open(`https://wa.me/254724241542?text=${encodeURIComponent(lines)}`, "_blank");
     setSent(true);
@@ -238,24 +226,32 @@ const BasketDrawer = ({ items, onClose, onRemove, onChangeQty }: {
 
   const handleSendAll = () => {
     const productLines = items.map((item, i) =>
-      `${i + 1}. *${item.product.name}* (${item.product.category}) — Qty: ${item.qty}`
+      `${i + 1}. ${item.product.name} (${item.product.category}) - Qty: ${item.qty}`
     ).join("\n");
+    const totalQty = items.reduce((s, i) => s + i.qty, 0);
+    const messageBody = `Basket Inquiry:\n${productLines}\n\nTotal: ${totalQty} units across ${items.length} product(s)\nNotes: ${notes || "N/A"}`;
+    const inquiry = { name: name || "Not provided", phone: phone || "Not provided", message: messageBody, status: "new" };
+    if (isSupabaseConfigured && supabase) {
+      supabase.from("inquiries").insert(inquiry).then().catch(() => {});
+    }
+    fetch(`${API_URL}/api/contact`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...inquiry, email: "info@ultimatevetserve.com", subject: "Basket Inquiry" }),
+    }).catch(() => {});
     const msg = [
-      `🐾 *VETERINARY BASKET INQUIRY*`,
-      `📋 *Ultimate Vetserve Limited*`,
+      `BASKET INQUIRY - Ultimate Vetserve Limited`,
       ``,
-      `*━━ CLIENT INFO ━━*`,
-      `👤 *Name:* ${name || "Not provided"}`,
-      clinic ? `🏥 *Clinic/Farm:* ${clinic}` : null,
-      `📞 *Phone:* ${phone || "Not provided"}`,
+      `Customer: ${name || "Not provided"}`,
+      clinic ? `Clinic/Farm: ${clinic}` : null,
+      `Contact: ${phone || "Not provided"}`,
       ``,
-      `*━━ PRODUCTS REQUESTED ━━*`,
+      `Products Requested:`,
       productLines,
       ``,
-      `📊 *Total Items:* ${items.reduce((s, i) => s + i.qty, 0)} units across ${items.length} product(s)`,
-      notes ? `\n📝 *Notes:* ${notes}` : null,
+      `Total: ${totalQty} units across ${items.length} product(s)`,
+      notes ? `Notes: ${notes}` : null,
       ``,
-      `_Sent via UltimateVetserve.com_`,
+      `Sent via UltimateVetserve.com`,
     ].filter(Boolean).join("\n");
     window.open(`https://wa.me/254724241542?text=${encodeURIComponent(msg)}`, "_blank");
     onClose();
@@ -351,121 +347,93 @@ const BasketDrawer = ({ items, onClose, onRemove, onChangeQty }: {
 
 // ─── Product Card ──────────────────────────────────────────────────────────────
 const ProductCard = ({
-  product, onInquire, onAddToBasket, productImage, onImageUpload,
+  product, onInquire, onAddToBasket,
 }: {
   product: Product;
   onInquire: (p: Product) => void;
   onAddToBasket: (p: Product, qty: number) => void;
-  productImage: string | null;
-  onImageUpload: (id: string, url: string) => void;
 }) => {
   const cfg = getCategoryConfig(product.category);
   const Icon = CATEGORY_ICONS[product.category] ?? ShieldCheck;
   return (
-    <div className="bg-white rounded-2xl border border-zinc-100 hover:border-primary/20 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group flex flex-col overflow-hidden">
-      {/* Image area */}
-      <ProductImageSlot
-        src={productImage ?? product.imageUrl}
-        onUpload={(url) => onImageUpload(product.id, url)}
-        category={product.category}
-      />
-
-      {/* Category bar */}
-      <div className={`h-[3px] w-full ${cfg.bar}`} />
-
-      <div className="p-5 flex flex-col flex-1">
-        {/* Status + category */}
-        <div className="flex items-center justify-between mb-3">
-          <p className={`text-[10px] font-bold uppercase tracking-widest ${cfg.color}`}>{product.category}</p>
-          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0 ${
-            product.stock === "In Stock"  ? "bg-emerald-50 text-emerald-700 border border-emerald-100" :
-            product.stock === "Available" ? "bg-amber-50 text-amber-700 border border-amber-100" :
-                                            "bg-red-50 text-red-700 border border-red-100"
-          }`}>{product.stock}</span>
+    <Link to={`/products/${product.id}`} className="block group">
+      <div className="bg-white rounded-2xl border border-zinc-100 hover:border-primary/20 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 flex flex-col overflow-hidden">
+        {/* Image area */}
+        <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-zinc-100 to-zinc-50">
+          {product.imageUrl ? (
+            <img src={product.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          ) : (
+            <div className={`w-full h-full ${cfg.bg}`} />
+          )}
         </div>
 
-        {/* Name */}
-        <Link to={`/products/${product.id}`}>
-          <h3 className="font-display font-bold text-zinc-900 text-[15px] leading-snug mb-2 group-hover:text-primary transition-colors">{product.name}</h3>
-        </Link>
+        {/* Category bar */}
+        <div className={`h-[3px] w-full ${cfg.bar}`} />
 
-        {/* Description */}
-        <p className="text-zinc-400 text-[12.5px] leading-relaxed mb-3 flex-1 line-clamp-2">{product.description}</p>
-
-        {/* Active ingredient */}
-        {product.activeIngredient && (
-          <div className="flex items-center gap-1.5 mb-3">
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Active:</span>
-            <span className="text-[12px] text-zinc-600 font-medium truncate">{product.activeIngredient}</span>
+        <div className="p-5 flex flex-col flex-1">
+          {/* Status + category */}
+          <div className="flex items-center justify-between mb-3">
+            <p className={`text-[10px] font-bold uppercase tracking-widest ${cfg.color}`}>{product.category}</p>
+            <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0 ${
+              product.stock === "In Stock"  ? "bg-emerald-50 text-emerald-700 border border-emerald-100" :
+              product.stock === "Available" ? "bg-amber-50 text-amber-700 border border-amber-100" :
+                                              "bg-red-50 text-red-700 border border-red-100"
+            }`}>{product.stock}</span>
           </div>
-        )}
 
-        {/* Species tags */}
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {product.species.map((sp) => (
-            <span key={sp} className="text-[10px] bg-primary/[0.06] text-primary/80 rounded-full px-2.5 py-0.5 font-semibold border border-primary/10">{sp}</span>
-          ))}
-        </div>
+          {/* Name */}
+          <h3 className="font-display font-bold text-zinc-900 text-[15px] leading-snug mb-2 group-hover:text-primary transition-colors">{product.name}</h3>
 
-        {/* Actions */}
-        <div className="grid grid-cols-3 gap-2">
-          <Link
-            to={`/products/${product.id}`}
-            className="col-span-1 flex items-center justify-center gap-1 py-2.5 rounded-xl text-[11px] font-bold border border-zinc-200 text-zinc-500 bg-zinc-50 hover:bg-zinc-100 transition-all"
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-            Details
-          </Link>
-          <button
-            onClick={() => onInquire(product)}
-            className="col-span-1 flex items-center justify-center gap-1 py-2.5 rounded-xl text-[11px] font-bold border border-primary/20 text-primary bg-primary/[0.05] hover:bg-primary/10 transition-all"
-          >
-            <MessageCircle className="w-3.5 h-3.5" />
-            Inquire
-          </button>
-          <button
-            onClick={() => onAddToBasket(product, 1)}
-            className="col-span-1 flex items-center justify-center gap-1 py-2.5 rounded-xl text-[11px] font-bold bg-primary/[0.08] text-primary hover:bg-primary hover:text-white border border-primary/15 transition-all"
-            title="Add to inquiry basket"
-          >
-            <ShoppingBag className="w-3.5 h-3.5" />
-            Basket
-          </button>
+          {/* Description */}
+          <p className="text-zinc-400 text-[12.5px] leading-relaxed mb-3 flex-1 line-clamp-2">{product.description}</p>
+
+          {/* Active ingredient */}
+          {product.activeIngredient && (
+            <div className="flex items-center gap-1.5 mb-3">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Active:</span>
+              <span className="text-[12px] text-zinc-600 font-medium truncate">{product.activeIngredient}</span>
+            </div>
+          )}
+
+          {/* Species tags */}
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {product.species.map((sp) => (
+              <span key={sp} className="text-[10px] bg-primary/[0.06] text-primary/80 rounded-full px-2.5 py-0.5 font-semibold border border-primary/10">{sp}</span>
+            ))}
+          </div>
+
+          {/* Actions */}
+          <div className="grid grid-cols-3 gap-2">
+            <span className="col-span-1 flex items-center justify-center gap-1 py-2.5 rounded-xl text-[11px] font-bold border border-zinc-200 text-zinc-500 bg-zinc-50 cursor-default">
+              <ChevronRight className="w-3.5 h-3.5" />
+              Details
+            </span>
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onInquire(product); }}
+              className="col-span-1 flex items-center justify-center gap-1 py-2.5 rounded-xl text-[11px] font-bold border border-primary/20 text-primary bg-primary/[0.05] hover:bg-primary/10 transition-all"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              Inquire
+            </button>
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAddToBasket(product, 1); }}
+              className="col-span-1 flex items-center justify-center gap-1 py-2.5 rounded-xl text-[11px] font-bold bg-primary/[0.08] text-primary hover:bg-primary hover:text-white border border-primary/15 transition-all"
+              title="Add to inquiry basket"
+            >
+              <ShoppingBag className="w-3.5 h-3.5" />
+              Basket
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
-
-// ─── Filter Accordion ──────────────────────────────────────────────────────────
-const FilterAccordion = ({ title, children }: { title: string; children: ReactNode }) => {
-  const [open, setOpen] = useState(true);
-  return (
-    <div className="border-b border-gray-100 pb-4 mb-4 last:border-0 last:mb-0">
-      <button onClick={() => setOpen(!open)} className="flex items-center justify-between w-full mb-2 py-1">
-        <span className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">{title}</span>
-        {open ? <ChevronUp className="w-3.5 h-3.5 text-gray-400" /> : <ChevronDown className="w-3.5 h-3.5 text-gray-400" />}
-      </button>
-      {open && <div className="space-y-0.5">{children}</div>}
-    </div>
-  );
-};
-
-const CheckRow = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) => (
-  <label className="flex items-center gap-2.5 cursor-pointer group py-1 select-none">
-    <div
-      onClick={onChange}
-      className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all ${checked ? "bg-primary border-primary" : "border-gray-300 group-hover:border-primary/60"}`}
-    >
-      {checked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
-    </div>
-    <span className={`text-sm transition-colors ${checked ? "text-primary font-semibold" : "text-gray-600 group-hover:text-gray-800"}`}>{label}</span>
-  </label>
-);
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 const ProductsPage = () => {
   const [searchParams] = useSearchParams();
+  const { products: allProducts } = useProducts();
 
   const initCategory = searchParams.get("category") ?? "";
   const initSpecies  = searchParams.get("species")  ?? "All";
@@ -477,14 +445,10 @@ const ProductsPage = () => {
   const [selectedStock,      setSelectedStock]      = useState<string[]>([]);
   const [searchQuery,        setSearchQuery]        = useState(initQuery);
   const [inquiryProduct,     setInquiryProduct]     = useState<Product | null>(null);
-  const [mobileSidebar,      setMobileSidebar]      = useState(false);
 
   // Basket state
   const [basket,       setBasket]       = useState<BasketItem[]>([]);
   const [basketOpen,   setBasketOpen]   = useState(false);
-
-  // Per-product uploaded images: { [productId]: objectUrl }
-  const [productImages, setProductImages] = useState<Record<string, string>>({});
 
   const addToBasket = (product: Product, qty: number) => {
     setBasket((prev) => {
@@ -503,6 +467,7 @@ const ProductsPage = () => {
   const filteredProducts = useMemo(() => {
     const q = searchQuery.toLowerCase();
     return allProducts.filter((p) => {
+      if (p.visible === false) return false;
       if (selectedSpecies !== "All" && !p.species.includes(selectedSpecies)) return false;
       if (selectedCategories.length && !selectedCategories.includes(p.category)) return false;
       if (selectedForms.length && !selectedForms.includes(p.form)) return false;
@@ -510,7 +475,7 @@ const ProductsPage = () => {
       if (q && !p.name.toLowerCase().includes(q) && !p.description.toLowerCase().includes(q) && !p.tags.some((t) => t.toLowerCase().includes(q))) return false;
       return true;
     });
-  }, [selectedSpecies, selectedCategories, selectedForms, selectedStock, searchQuery]);
+  }, [selectedSpecies, selectedCategories, selectedForms, selectedStock, searchQuery, allProducts]);
 
   const activeCount = selectedCategories.length + selectedForms.length + selectedStock.length + (selectedSpecies !== "All" ? 1 : 0);
 
@@ -522,46 +487,7 @@ const ProductsPage = () => {
     setSearchQuery("");
   };
 
-  const sidebarJsx = (
-    <div>
-      <div className="flex items-center justify-between mb-5">
-        <p className="font-display font-bold text-zinc-800 text-sm">Filters</p>
-        {activeCount > 0 && (
-          <button onClick={clearAll} className="text-xs font-semibold text-primary hover:underline">
-            Clear all ({activeCount})
-          </button>
-        )}
-      </div>
-
-      <FilterAccordion title="Category">
-        {categoryFilters.map((c) => (
-          <CheckRow key={c} label={c} checked={selectedCategories.includes(c)} onChange={() => toggle(selectedCategories, setSelectedCategories, c)} />
-        ))}
-      </FilterAccordion>
-
-      <FilterAccordion title="Product Form">
-        {formFilters.map((f) => (
-          <CheckRow key={f} label={f} checked={selectedForms.includes(f)} onChange={() => toggle(selectedForms, setSelectedForms, f)} />
-        ))}
-      </FilterAccordion>
-
-      <FilterAccordion title="Availability">
-        {stockFilters.map((s) => (
-          <CheckRow key={s} label={s} checked={selectedStock.includes(s)} onChange={() => toggle(selectedStock, setSelectedStock, s)} />
-        ))}
-      </FilterAccordion>
-
-      <div className="bg-primary/5 rounded-xl p-4 border border-primary/10 mt-2">
-        <p className="text-xs font-bold text-zinc-700 mb-1">Can't find a product?</p>
-        <p className="text-xs text-zinc-400 mb-3 leading-relaxed">Contact our sales team for custom sourcing and bulk orders.</p>
-        <a href="tel:+254724241542" className="flex items-center gap-1.5 text-xs font-bold text-primary">
-          <Phone className="w-3.5 h-3.5" /> +254 724 241542
-        </a>
-      </div>
-    </div>
-  );
-
-  const basketCount = basket.reduce((s, i) => s + i.qty, 0);
+  const basketCount = basket.reduce((sum, item) => sum + item.qty, 0);
 
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50/50">
@@ -606,6 +532,7 @@ const ProductsPage = () => {
       {/* ── Species Filter Bar ───────────────────────────────────── */}
       <div className="bg-white border-b border-zinc-100 shadow-sm sticky top-[72px] z-30">
         <div className="container mx-auto px-4">
+          {/* Row 1: Species tabs */}
           <div className="flex items-center gap-2 overflow-x-auto py-3" style={{ scrollbarWidth: "none" }}>
             {speciesFilters.map(({ name, icon: Icon }) => (
               <button
@@ -638,97 +565,79 @@ const ProductsPage = () => {
               )}
             </button>
           </div>
+
         </div>
       </div>
 
       {/* ── Main Content ─────────────────────────────────────────── */}
       <main className="flex-1 container mx-auto px-4 py-10">
-        <div className="flex gap-8">
-          {/* Desktop Sidebar */}
-          <aside className="hidden lg:block w-60 shrink-0">
-            <div className="bg-white rounded-2xl border border-zinc-100 p-5 sticky top-[148px]">
-              {sidebarJsx}
-            </div>
-          </aside>
-
-          {/* Right Pane */}
-          <div className="flex-1 min-w-0">
-            {/* Search + mobile filter */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="relative flex-1 group">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none group-focus-within:text-primary transition-colors" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search products by name, ingredient, tag…"
-                  className="w-full pl-10 pr-10 py-3 bg-white border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary/50 focus:shadow-md transition-all"
-                />
-                {searchQuery && (
-                  <button onClick={() => setSearchQuery("")} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded-full p-0.5 transition-colors">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-              <button
-                onClick={() => setMobileSidebar(!mobileSidebar)}
-                className="lg:hidden flex items-center gap-2 px-4 py-2.5 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-zinc-600 hover:border-primary/40 transition-colors shrink-0"
-              >
-                <Filter className="w-4 h-4" />
-                Filters
-                {activeCount > 0 && (
-                  <span className="bg-primary text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center font-bold">
-                    {activeCount}
-                  </span>
-                )}
+        {/* Search */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="relative flex-1 group">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none group-focus-within:text-primary transition-colors" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search products by name, ingredient, tag…"
+              className="w-full pl-10 pr-10 py-3 bg-white border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary/50 focus:shadow-md transition-all"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded-full p-0.5 transition-colors">
+                <X className="w-3.5 h-3.5" />
               </button>
-            </div>
-
-            {/* Mobile Sidebar */}
-            {mobileSidebar && (
-              <div className="lg:hidden bg-white rounded-2xl border border-zinc-100 p-5 mb-6">
-                {sidebarJsx}
-              </div>
             )}
+          </div>
+        </div>
 
-            {/* Active filter pills */}
-            {activeCount > 0 && (
-              <div className="flex flex-wrap gap-2 mb-5">
-                {selectedSpecies !== "All" && (
-                  <span className="flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-semibold rounded-full px-3 py-1">
-                    {selectedSpecies}
-                    <button onClick={() => setSelectedSpecies("All")}><X className="w-3 h-3" /></button>
-                  </span>
-                )}
-                {selectedCategories.map((c) => (
-                  <span key={c} className="flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-semibold rounded-full px-3 py-1">
-                    {c} <button onClick={() => toggle(selectedCategories, setSelectedCategories, c)}><X className="w-3 h-3" /></button>
-                  </span>
-                ))}
-                {selectedForms.map((f) => (
-                  <span key={f} className="flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-semibold rounded-full px-3 py-1">
-                    {f} <button onClick={() => toggle(selectedForms, setSelectedForms, f)}><X className="w-3 h-3" /></button>
-                  </span>
-                ))}
-                {selectedStock.map((s) => (
-                  <span key={s} className="flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-semibold rounded-full px-3 py-1">
-                    {s} <button onClick={() => toggle(selectedStock, setSelectedStock, s)}><X className="w-3 h-3" /></button>
-                  </span>
-                ))}
-              </div>
-            )}
+        {/* Category / Form / Stock filter chips */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-4" style={{ scrollbarWidth: "none" }}>
+          <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider shrink-0">Category:</span>
+          {categoryFilters.map((c) => (
+            <button key={c} onClick={() => toggle(selectedCategories, setSelectedCategories, c)}
+              className={`text-[11px] font-semibold whitespace-nowrap shrink-0 px-3 py-1.5 rounded-full border transition-all ${
+                selectedCategories.includes(c)
+                  ? "bg-primary text-white border-primary"
+                  : "bg-white text-zinc-500 border-zinc-200 hover:border-primary/40 hover:text-primary"
+              }`}
+            >{c}</button>
+          ))}
+          <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider shrink-0 ml-2">Form:</span>
+          {formFilters.map((f) => (
+            <button key={f} onClick={() => toggle(selectedForms, setSelectedForms, f)}
+              className={`text-[11px] font-semibold whitespace-nowrap shrink-0 px-3 py-1.5 rounded-full border transition-all ${
+                selectedForms.includes(f)
+                  ? "bg-primary text-white border-primary"
+                  : "bg-white text-zinc-500 border-zinc-200 hover:border-primary/40 hover:text-primary"
+              }`}
+            >{f}</button>
+          ))}
+          <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider shrink-0 ml-2">Stock:</span>
+          {stockFilters.map((s) => (
+            <button key={s} onClick={() => toggle(selectedStock, setSelectedStock, s)}
+              className={`text-[11px] font-semibold whitespace-nowrap shrink-0 px-3 py-1.5 rounded-full border transition-all ${
+                selectedStock.includes(s)
+                  ? "bg-primary text-white border-primary"
+                  : "bg-white text-zinc-500 border-zinc-200 hover:border-primary/40 hover:text-primary"
+              }`}
+            >{s}</button>
+          ))}
+          {activeCount > 0 && (
+            <button onClick={clearAll} className="text-[10px] font-bold text-red-400 hover:text-red-600 shrink-0 ml-2 whitespace-nowrap">
+              Clear ({activeCount})
+            </button>
+          )}
+        </div>
 
-            {/* Product Grid */}
-            {filteredProducts.length > 0 ? (
-              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+        {/* Product Grid */}
+        {filteredProducts.length > 0 ? (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-5">
                 {filteredProducts.map((p) => (
                   <ProductCard
                     key={p.id}
                     product={p}
                     onInquire={setInquiryProduct}
                     onAddToBasket={addToBasket}
-                    productImage={productImages[p.id] ?? null}
-                    onImageUpload={(id, url) => setProductImages((prev) => ({ ...prev, [id]: url }))}
                   />
                 ))}
               </div>
@@ -770,8 +679,6 @@ const ProductsPage = () => {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
       </main>
 
       {/* Floating basket FAB (mobile) */}

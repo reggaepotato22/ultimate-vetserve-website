@@ -1,9 +1,10 @@
 import { Mail, Phone, MapPin, Facebook, Linkedin, MessageCircle, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/uvs-logo.png";
+import { useSiteSettings } from "@/hooks/useData";
 
 const WHATSAPP_NUMBER = "254724241542";
-const WHATSAPP_DIRECTIONS_MSG = encodeURIComponent("Hello, I'd like to get directions to Ultimate House, Oloolua, Ngong.");
+const WHATSAPP_DIRECTIONS_MSG = encodeURIComponent("Hello, I would like directions to Ultimate House, Oloolua, Ngong.");
 
 const quickLinks = [
   { label: "Home", href: "/" },
@@ -22,7 +23,14 @@ const productLinks = [
   { label: "Disinfectants & Salves", href: "/products?category=disinfectants" },
 ];
 
+const defaultContact = {
+  mapImage: "https://images.unsplash.com/photo-1524668951403-d44b28200ce9?auto=format&fit=crop&q=80&w=800",
+};
+
 const Footer = () => {
+  const { settings } = useSiteSettings();
+  const contact = (settings.contact as Record<string, string>) ?? defaultContact;
+  const mapImage = contact.mapImage || defaultContact.mapImage;
   return (
     <footer className="bg-[#061208] text-zinc-300" role="contentinfo">
       {/* Top accent line */}
@@ -32,7 +40,7 @@ const Footer = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-transparent to-transparent pointer-events-none" />
 
       <div className="container mx-auto px-4 py-16 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-14">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-14">
           {/* Brand column */}
           <div className="lg:col-span-1 space-y-5">
             <Link to="/" aria-label="Ultimate Vetserve — Home">
@@ -54,7 +62,7 @@ const Footer = () => {
                 <Facebook className="w-4 h-4" />
               </a>
               <a
-                href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hello, I would like to inquire about veterinary products.")}`}
+                href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hello, I would like to inquire about veterinary products. Could you provide me with more information?")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="WhatsApp"
@@ -144,24 +152,26 @@ const Footer = () => {
               </li>
             </ul>
 
-            {/* Faux map card */}
-            <div className="rounded-xl overflow-hidden border border-emerald-900/40">
+            {/* Map card with Kenya terrain background */}
+            <div className="rounded-xl overflow-hidden border border-emerald-900/40 shadow-xl">
               <div
-                className="relative h-28 flex items-center justify-center"
+                className="relative h-32 flex items-center justify-center"
                 style={{
-                  background: "linear-gradient(135deg, #0a1f0e 0%, #0f2a13 100%)",
-                  backgroundImage:
-                    "linear-gradient(rgba(52,211,153,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(52,211,153,0.08) 1px, transparent 1px)",
-                  backgroundSize: "20px 20px",
+                  backgroundImage: `url('${mapImage}')`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
                 }}
               >
-                <div className="absolute w-20 h-20 rounded-full border border-primary/15" />
-                <div className="absolute w-12 h-12 rounded-full border border-primary/30" />
+                {/* Dark overlay for readability */}
+                <div className="absolute inset-0 bg-[#071a09]/80" />
+                {/* Pin */}
+                <div className="absolute w-24 h-24 rounded-full border border-emerald-400/20" />
+                <div className="absolute w-14 h-14 rounded-full border border-emerald-400/35" />
                 <div className="relative z-10 flex flex-col items-center">
-                  <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-black/50">
-                    <MapPin className="w-5 h-5 text-white" strokeWidth={2.5} />
+                  <div className="w-11 h-11 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-emerald-900/60 animate-pulse">
+                    <MapPin className="w-5.5 h-5.5 text-white" strokeWidth={2.5} />
                   </div>
-                  <div className="w-1.5 h-1.5 bg-primary/60 rounded-full mt-1" />
+                  <div className="w-2 h-2 bg-primary/70 rounded-full mt-1" />
                 </div>
               </div>
               <div className="bg-[#0a1f0e] border-t border-emerald-900/40 px-4 py-3 flex items-center justify-between gap-3">

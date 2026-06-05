@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -10,8 +10,12 @@ import {
   Stethoscope, Bird, PawPrint, Leaf, AlertTriangle,
   Send, Loader2, X, Package, Clock, Thermometer,
 } from "lucide-react";
-import { allProducts, getCategoryConfig, getRelatedProducts } from "@/data/products";
+import { getCategoryConfig } from "@/data/products";
+import { useProducts } from "@/hooks/useData";
 import type { Product } from "@/types/content";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   "Injectables": Syringe,
@@ -39,8 +43,16 @@ const InquiryModal = ({ product, onClose }: { product: Product; onClose: () => v
 
   const handleSend = () => {
     setBusy(true);
+    const inquiry = { name: name || "Not provided", phone: phone || "Not provided", message: `Product: ${product.name} (${product.category})\nQty: ${qty || "TBD"}`, status: "new" };
+    if (isSupabaseConfigured && supabase) {
+      supabase.from("inquiries").insert(inquiry).then().catch(() => {});
+    }
+    fetch(`${API_URL}/api/contact`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...inquiry, email: "info@ultimatevetserve.com", subject: `Product Inquiry: ${product.name}` }),
+    }).catch(() => {});
     const msg = encodeURIComponent(
-      `Hello, I'm *${name || "a customer"}*.\n\nI'd like a professional inquiry about:\n*Product:* ${product.name} (${product.category})\n*Quantity:* ${qty || "TBD"}\n*Phone:* ${phone || "N/A"}`
+      `Product Inquiry - Ultimate Vetserve Limited\n\nProduct: ${product.name} (${product.category})\nQuantity: ${qty || "TBD"}\nName: ${name || "Not provided"}\nPhone: ${phone || "N/A"}\n\nSent via UltimateVetserve.com`
     );
     window.open(`https://wa.me/254724241542?text=${msg}`, "_blank");
     setBusy(false);
@@ -101,8 +113,15 @@ const ProductDetailPage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
   const [showInquiry, setShowInquiry] = useState(false);
+  const { products } = useProducts();
 
-  const product = allProducts.find((p) => p.id === id);
+  const product = products.find((p) => p.id === id && p.visible !== false);
+  const related = useMemo(() => {
+    if (!product) return [];
+    return products
+      .filter((p) => p.id !== product.id && p.category === product.category && p.visible !== false)
+      .slice(0, 3);
+  }, [product, products]);
 
   if (!product) {
     return (
@@ -125,7 +144,6 @@ const ProductDetailPage = () => {
 
   const cfg = getCategoryConfig(product.category);
   const CatIcon = CATEGORY_ICONS[product.category] ?? ShieldCheck;
-  const related = getRelatedProducts(product, 3);
 
   // Category-specific background images for the banner
   const CATEGORY_BANNERS: Record<string, string> = {
@@ -189,10 +207,7 @@ const ProductDetailPage = () => {
               {product.imageUrl ? (
                 <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover rounded-3xl" />
               ) : (
-                <div className="flex flex-col items-center gap-4 p-8 text-center">
-                  <CatIcon className={`w-28 h-28 ${cfg.color} opacity-30`} />
-                  <p className="text-sm font-semibold text-gray-400">Product Image</p>
-                </div>
+                <div className={`w-full h-full ${cfg.bg}`} />
               )}
               {/* Category bar */}
               <div className={`absolute bottom-0 left-0 right-0 h-1 ${cfg.bar}`} />

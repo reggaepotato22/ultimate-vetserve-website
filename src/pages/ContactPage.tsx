@@ -1,9 +1,8 @@
-import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { ContactForm } from "@/components/ContactForm";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Phone, MapPin, Clock, Camera } from "lucide-react";
+import { Mail, Phone, MapPin, Clock } from "lucide-react";
 
 const WHATSAPP_NUMBER = "254724241542";
 const WHATSAPP_DIRECTIONS_MSG = encodeURIComponent("Hello, I'd like to get directions to Ultimate House, Oloolua, Ngong.");
@@ -11,30 +10,16 @@ const WHATSAPP_DIRECTIONS_MSG = encodeURIComponent("Hello, I'd like to get direc
 const DEFAULT_CONTACT_HERO = "https://images.unsplash.com/photo-1596526134530-727856838726?auto=format&fit=crop&q=80&w=1600";
 
 const ContactPage = () => {
-  const [heroImage, setHeroImage] = useState(DEFAULT_CONTACT_HERO);
-
-  const handleHeroUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setHeroImage(URL.createObjectURL(file));
-  };
-
   return (
     <div className="min-h-screen flex flex-col font-sans">
       <Navigation />
       <main className="flex-1 bg-zinc-50/50">
         {/* Hero Banner */}
-        <div className="relative bg-zinc-950 py-20 text-white overflow-hidden group">
-          <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroImage})` }} />
+        <div className="relative bg-zinc-950 py-20 text-white overflow-hidden">
+          <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${DEFAULT_CONTACT_HERO})` }} />
           <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/98 via-zinc-950/92 to-zinc-900/80" />
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/70 via-transparent to-zinc-950/20" />
           <div className="absolute inset-0 bg-grid-green opacity-20" />
-          {/* Upload button */}
-          <label className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20 text-white text-[11px] font-semibold px-3 py-2 rounded-full cursor-pointer transition-all opacity-0 group-hover:opacity-100">
-            <Camera className="w-3.5 h-3.5" />
-            Change Background
-            <input type="file" accept="image/*" className="hidden" onChange={handleHeroUpload} />
-          </label>
           <div className="container mx-auto px-4 text-center relative z-10">
             <p className="text-[11px] font-bold text-emerald-400 uppercase tracking-[0.2em] mb-4">Reach Out</p>
             <h1 className="font-display text-[2.8rem] md:text-[3.8rem] font-extrabold mb-4 tracking-tight leading-[1.08]">Get in Touch</h1>

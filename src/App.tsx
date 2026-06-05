@@ -28,6 +28,11 @@ import AdminNewsForm from "./pages/admin/AdminNewsForm";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminTeam from "./pages/admin/AdminTeam";
 import AdminSustainability from "./pages/admin/AdminSustainability";
+import AdminInquiries from "./pages/admin/AdminInquiries";
+
+import { usePageViewTracking } from "@/hooks/useAnalytics";
+
+const AnalyticsTracker = () => { usePageViewTracking(); return null; };
 
 const queryClient = new QueryClient();
 
@@ -39,6 +44,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <ScrollToTop />
+          <AnalyticsTracker />
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Index />} />
@@ -64,6 +70,7 @@ const App = () => (
               <Route path="news/new"     element={<AdminNewsForm />} />
               <Route path="news/:id"     element={<AdminNewsForm />} />
               <Route path="team"         element={<AdminTeam />} />
+              <Route path="inquiries"    element={<AdminInquiries />} />
               <Route path="sustainability" element={<AdminSustainability />} />
               <Route path="settings"     element={<AdminSettings />} />
             </Route>

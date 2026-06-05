@@ -1,18 +1,18 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search, Edit, Trash2, Newspaper, Star } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Newspaper, Star, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { defaultNews } from "@/data/news";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { useNews } from "@/hooks/useData";
 import type { NewsArticle } from "@/types/content";
 import { format } from "date-fns";
 
 const AdminNews = () => {
-  const [articles, setArticles] = useState<NewsArticle[]>(defaultNews);
+  const { articles, setArticles, loading } = useNews();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  const categories = ["All", ...Array.from(new Set(defaultNews.map((n) => n.category)))];
+  const categories = ["All", ...Array.from(new Set(articles.map((n) => n.category)))];
 
   const filtered = articles.filter((n) => {
     const matchCat = selectedCategory === "All" || n.category === selectedCategory;
@@ -43,7 +43,14 @@ const AdminNews = () => {
         </Link>
       </div>
 
-      {!isSupabaseConfigured && (
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-5 h-5 animate-spin text-primary" />
+          <span className="ml-2 text-sm text-gray-400">Loading articles...</span>
+        </div>
+      )}
+
+      {!loading && !isSupabaseConfigured && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-700">
           <strong>Note:</strong> Supabase not connected. Changes are not persisted.
         </div>

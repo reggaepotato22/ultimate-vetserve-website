@@ -17,6 +17,7 @@ export type Product = {
   tags: string[];
   imageUrl?: string;
   featured?: boolean;
+  visible?: boolean;
   orderIndex?: number;
 };
 
@@ -39,6 +40,7 @@ export type TeamMember = {
   title?: string;
   bio?: string;
   imageUrl?: string;
+  visible?: boolean;
   orderIndex: number;
 };
 

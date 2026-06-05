@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Loader2, Send } from "lucide-react";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -23,6 +24,8 @@ const formSchema = z.object({
   subject: z.string().min(5, "Subject must be at least 5 characters"),
   message: z.string().min(10, "Message must be at least 10 characters"),
 });
+
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 export const ContactForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,18 +44,27 @@ export const ContactForm = () => {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
-      const response = await fetch("/contact.php", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
-      });
+      // 1. Save to Supabase inquiries table
+      if (isSupabaseConfigured && supabase) {
+        const { error: dbErr } = await supabase.from("inquiries").insert({
+          name: values.name,
+          email: values.email,
+          phone: values.phone,
+          message: values.message,
+          status: "new",
+        });
+        if (dbErr) console.error("Supabase insert error:", dbErr.message);
+      }
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Something went wrong");
+      // 2. Send email notification via API
+      try {
+        await fetch(`${API_URL}/api/contact`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(values),
+        });
+      } catch (apiErr) {
+        console.error("Email API error:", apiErr);
       }
 
       toast.success("Message sent successfully!", {

@@ -1,41 +1,25 @@
 import { BadgeCheck, FlaskConical, Users, MapPin } from "lucide-react";
 
-const stats = [
-  {
-    icon: FlaskConical,
-    value: "500+",
-    label: "Registered Products",
-    sublabel: "Pharmaceutical catalog",
-  },
-  {
-    icon: Users,
-    value: "1,000+",
-    label: "Customers Served",
-    sublabel: "Vets, farmers & clinics",
-  },
-  {
-    icon: MapPin,
-    value: "15+",
-    label: "Counties Covered",
-    sublabel: "Nationwide distribution",
-  },
-  {
-    icon: BadgeCheck,
-    value: "100%",
-    label: "Quality Certified",
-    sublabel: "KVB & KEBS compliant",
-  },
-];
+interface SocialProofProps {
+  stat1Val?: string; stat1Label?: string; stat1Sub?: string;
+  stat2Val?: string; stat2Label?: string; stat2Sub?: string;
+  stat3Val?: string; stat3Label?: string; stat3Sub?: string;
+  stat4Val?: string; stat4Label?: string; stat4Sub?: string;
+}
 
-export const SocialProof = () => {
+const ICONS = [FlaskConical, Users, MapPin, BadgeCheck];
+
+export const SocialProof = (props: SocialProofProps) => {
+  const stats = [
+    { icon: ICONS[0], value: props.stat1Val ?? "500+", label: props.stat1Label ?? "Registered Products", sublabel: props.stat1Sub ?? "Pharmaceutical catalog" },
+    { icon: ICONS[1], value: props.stat2Val ?? "1,000+", label: props.stat2Label ?? "Customers Served", sublabel: props.stat2Sub ?? "Vets, farmers & clinics" },
+    { icon: ICONS[2], value: props.stat3Val ?? "15+", label: props.stat3Label ?? "Counties Covered", sublabel: props.stat3Sub ?? "Nationwide distribution" },
+    { icon: ICONS[3], value: props.stat4Val ?? "100%", label: props.stat4Label ?? "Quality Certified", sublabel: props.stat4Sub ?? "KVB & KEBS compliant" },
+  ];
+
   return (
     <section className="py-20 bg-white border-y border-zinc-100" aria-label="Key statistics">
       <div className="container mx-auto px-4">
-        {/* Section label */}
-        <p className="text-center text-[11px] font-bold text-zinc-400 uppercase tracking-[0.18em] mb-12">
-          Trusted by professionals across Kenya
-        </p>
-
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-zinc-100 rounded-2xl overflow-hidden shadow-xs">
           {stats.map(({ icon: Icon, value, label, sublabel }) => (
             <div

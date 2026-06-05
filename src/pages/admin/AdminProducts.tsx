@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search, Edit, Trash2, Package, Filter } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Package, Filter, Loader2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { allProducts, getCategoryConfig } from "@/data/products";
+import { getCategoryConfig } from "@/data/products";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { useProducts } from "@/hooks/useData";
 import type { Product } from "@/types/content";
 
 const AdminProducts = () => {
-  const [products, setProducts] = useState<Product[]>(allProducts);
+  const { products, setProducts, loading } = useProducts();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  const categories = ["All", ...Array.from(new Set(allProducts.map((p) => p.category)))];
+  const categories = ["All", ...Array.from(new Set(products.map((p) => p.category)))];
 
   const filtered = products.filter((p) => {
     const matchCat = selectedCategory === "All" || p.category === selectedCategory;
@@ -27,7 +28,17 @@ const AdminProducts = () => {
       if (error) { alert("Delete failed: " + error.message); return; }
     }
     setProducts((prev) => prev.filter((p) => p.id !== id));
-    setDeleteId(null);
+  };
+
+  const handleToggleVisibility = async (product: Product) => {
+    const newVisible = product.visible === false ? true : false;
+    setTogglingId(product.id);
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from("products").update({ visible: newVisible }).eq("id", product.id);
+      if (error) { alert("Update failed: " + error.message); setTogglingId(null); return; }
+    }
+    setProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, visible: newVisible } : p));
+    setTogglingId(null);
   };
 
   return (
@@ -44,7 +55,14 @@ const AdminProducts = () => {
         </Link>
       </div>
 
-      {!isSupabaseConfigured && (
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-5 h-5 animate-spin text-primary" />
+          <span className="ml-2 text-sm text-gray-400">Loading products...</span>
+        </div>
+      )}
+
+      {!loading && !isSupabaseConfigured && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-700">
           <strong>Note:</strong> Supabase is not connected. Changes made here are not saved to a database. Connect Supabase to enable persistent product management.
         </div>
@@ -84,6 +102,7 @@ const AdminProducts = () => {
                 <th className="text-left px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Category</th>
                 <th className="text-left px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">Form</th>
                 <th className="text-left px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="text-left px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Visible</th>
                 <th className="text-right px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -117,6 +136,19 @@ const AdminProducts = () => {
                       }`}>
                         {p.stock}
                       </span>
+                    </td>
+                    <td className="px-5 py-4 hidden lg:table-cell">
+                      <button onClick={() => handleToggleVisibility(p)} disabled={togglingId === p.id}
+                        className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${p.visible !== false ? "bg-primary" : "bg-gray-300"} ${togglingId === p.id ? "opacity-50 cursor-wait" : "cursor-pointer"}`}
+                        title={p.visible !== false ? "Click to hide from public" : "Click to show on public"}
+                      >
+                        {togglingId === p.id ? (
+                          <Loader2 className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-spin" />
+                        ) : (
+                          <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${p.visible !== false ? "translate-x-5" : "translate-x-0"}`} />
+                        )}
+                      </button>
+                      <span className="ml-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">{p.visible !== false ? "Visible" : "Hidden"}</span>
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-end gap-2">

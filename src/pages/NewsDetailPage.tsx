@@ -1,16 +1,18 @@
+import { useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, ArrowLeft, ChevronRight, ArrowRight, Tag } from "lucide-react";
-import { getNewsBySlug, defaultNews } from "@/data/news";
+import { useNews } from "@/hooks/useData";
 import { format } from "date-fns";
 
 const NewsDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const article = getNewsBySlug(slug ?? "");
-  const related = defaultNews.filter((n) => n.slug !== slug).slice(0, 3);
+  const { articles: defaultNews } = useNews();
+  const article = defaultNews.find((n) => n.slug === slug) ?? null;
+  const related = useMemo(() => defaultNews.filter((n) => n.slug !== slug).slice(0, 3), [defaultNews, slug]);
 
   if (!article) {
     return (

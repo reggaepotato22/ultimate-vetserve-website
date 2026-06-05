@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Link, useNavigate, useLocation, Outlet } from "react-router-dom";
 import { useAdmin } from "@/contexts/AdminContext";
 import {
-  LayoutDashboard, Package, Newspaper, Settings, Users, Leaf,
+  LayoutDashboard, Package, Newspaper, Settings, Users, Leaf, MessageSquare,
   LogOut, ExternalLink, Menu, X, ChevronRight,
 } from "lucide-react";
 import { useState } from "react";
@@ -13,6 +13,7 @@ const navItems = [
   { label: "Products",      path: "/admin/products",      icon: Package },
   { label: "News & Events", path: "/admin/news",          icon: Newspaper },
   { label: "Team Members",  path: "/admin/team",          icon: Users },
+  { label: "Inquiries",     path: "/admin/inquiries",     icon: MessageSquare },
   { label: "Sustainability",path: "/admin/sustainability", icon: Leaf },
   { label: "Site Settings", path: "/admin/settings",      icon: Settings },
 ];

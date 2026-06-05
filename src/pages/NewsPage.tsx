@@ -4,10 +4,12 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, ArrowRight, Search, ChevronRight, Tag } from "lucide-react";
-import { defaultNews, newsCategories } from "@/data/news";
+import { newsCategories } from "@/data/news";
+import { useNews } from "@/hooks/useData";
 import { format } from "date-fns";
 
 const NewsPage = () => {
+  const { articles: defaultNews } = useNews();
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 

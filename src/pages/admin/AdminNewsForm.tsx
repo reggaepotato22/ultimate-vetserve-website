@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,14 @@ const empty: Omit<NewsArticle, "id"> = {
 const toSlug = (title: string) =>
   title.toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 80);
 
+const Field = ({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) => (
+  <div>
+    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1.5">{label}</label>
+    {children}
+    {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+  </div>
+);
+
 const AdminNewsForm = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -27,11 +35,33 @@ const AdminNewsForm = () => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
+  const [loadingArticle, setLoadingArticle] = useState(!isNew);
 
   useEffect(() => {
     if (!isNew && id) {
-      const a = defaultNews.find((x) => x.id === id);
-      if (a) { const { id: _id, ...rest } = a; setForm(rest); setSlugEdited(true); }
+      setLoadingArticle(true);
+      const fetchArticle = async () => {
+        if (isSupabaseConfigured && supabase) {
+          const { data, error } = await supabase.from("news_events").select("*").eq("id", id).single();
+          if (data && !error) {
+            const a: NewsArticle = {
+              id: data.id, title: data.title, slug: data.slug,
+              excerpt: data.excerpt, content: data.content, category: data.category ?? "News",
+              imageUrl: data.image_url, author: data.author ?? "Ultimate Vetserve",
+              publishedAt: data.published_at, featured: data.featured ?? false,
+            };
+            const { id: _id, ...rest } = a;
+            setForm(rest);
+            setSlugEdited(true);
+            setLoadingArticle(false);
+            return;
+          }
+        }
+        const a = defaultNews.find((x) => x.id === id);
+        if (a) { const { id: _id, ...rest } = a; setForm(rest); setSlugEdited(true); }
+        setLoadingArticle(false);
+      };
+      fetchArticle();
     }
   }, [id, isNew]);
 
@@ -84,14 +114,6 @@ const AdminNewsForm = () => {
     navigate("/admin/news");
   };
 
-  const Field = ({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) => (
-    <div>
-      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1.5">{label}</label>
-      {children}
-      {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
-    </div>
-  );
-
   return (
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center gap-4">
@@ -106,15 +128,23 @@ const AdminNewsForm = () => {
         </div>
       </div>
 
-      {!isSupabaseConfigured && (
+      {loadingArticle && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <span className="ml-3 text-sm text-gray-500">Loading article...</span>
+        </div>
+      )}
+
+      {!loadingArticle && !isSupabaseConfigured && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
           <p className="text-amber-700 text-xs">Supabase not connected — changes won't be saved to database.</p>
         </div>
       )}
 
-      {error && <div className="bg-red-50 border border-red-100 rounded-xl p-3 text-red-600 text-sm">{error}</div>}
+      {!loadingArticle && error && <div className="bg-red-50 border border-red-100 rounded-xl p-3 text-red-600 text-sm">{error}</div>}
 
+      {!loadingArticle && <>
       {/* Core Fields */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
         <h2 className="font-bold text-gray-900 text-sm uppercase tracking-wider border-b border-gray-100 pb-3">Article Details</h2>
@@ -222,6 +252,7 @@ const AdminNewsForm = () => {
           {saving ? "Saving..." : "Save Article"}
         </Button>
       </div>
+      </>}
     </div>
   );
 };

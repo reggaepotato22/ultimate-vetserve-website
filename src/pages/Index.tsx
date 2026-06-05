@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import Footer from "@/components/Footer";
@@ -9,46 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import {
   BadgeCheck, HeartPulse, Truck, Phone, ArrowRight, ChevronRight,
-  Calendar, Syringe, Pill, FlaskConical, TestTube, ShieldCheck, Camera,
+  Calendar, Syringe, Pill, FlaskConical, TestTube, ShieldCheck,
 } from "lucide-react";
-import { getFeaturedProducts, getCategoryConfig } from "@/data/products";
-import { getLatestNews } from "@/data/news";
+import { getCategoryConfig } from "@/data/products";
+import { useProducts, useNews, useSiteSettings } from "@/hooks/useData";
 import { format } from "date-fns";
-
-const speciesCategories = [
-  {
-    name: "Cattle & Livestock",
-    tag: "Antibiotics · Antiparasitic · Nutrition",
-    count: "12+ Products",
-    link: "/products?species=Cattle",
-    image: "https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&q=80&w=700",
-    accent: "from-green-900/80",
-  },
-  {
-    name: "Poultry",
-    tag: "Vaccines · Vitamins · Treatments",
-    count: "8+ Products",
-    link: "/products?species=Poultry",
-    image: "https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?auto=format&fit=crop&q=80&w=700",
-    accent: "from-emerald-900/80",
-  },
-  {
-    name: "Companion Pets",
-    tag: "Antiparasitic · Vitamins · Care",
-    count: "5+ Products",
-    link: "/products?species=Pets",
-    image: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&q=80&w=700",
-    accent: "from-teal-900/80",
-  },
-  {
-    name: "General Use",
-    tag: "Disinfectants · Supplements",
-    count: "3+ Products",
-    link: "/products?species=General",
-    image: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&q=80&w=700",
-    accent: "from-lime-900/80",
-  },
-];
 
 const whyCards = [
   { icon: BadgeCheck, num: "01", title: "Certified Quality", desc: "Every product is registered with the Kenya Veterinary Board and meets KEBS international standards before it reaches your hands.", bg: "https://images.unsplash.com/photo-1578496479914-7ef3b0193be3?auto=format&fit=crop&q=80&w=600" },
@@ -56,84 +20,49 @@ const whyCards = [
   { icon: HeartPulse, num: "03", title: "Expert Guidance", desc: "Our trained veterinary pharmaceutical specialists provide professional support on product selection and disease management.", bg: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=600" },
 ];
 
-const defaultProductImages: Record<string, string> = {
-  "1": "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&q=80&w=600",
-  "4": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=600",
-  "6": "https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&q=80&w=600",
-  "10": "https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&q=80&w=600",
-  "12": "https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?auto=format&fit=crop&q=80&w=600",
-  "19": "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&q=80&w=600",
+const defaultHomepage = {
+  heroTitle: "Your Trusted Partner in Veterinary Excellence",
+  heroTitleAccent: "Veterinary Excellence",
+  heroSubtitle: "Premium veterinary pharmaceuticals for livestock, poultry, and companion animals across Kenya.",
+  heroBadge: "Kenya's Most Trusted Vet Pharma Supplier",
+  ctaPrimary: "Browse Products",
+  ctaSecondary: "Contact Sales",
+  stat1Val: "500+", stat1Label: "Products", stat1Sub: "Registered Products · Pharmaceutical catalog",
+  stat2Val: "1,000+", stat2Label: "Customers", stat2Sub: "Customers Served · Vets, farmers & clinics",
+  stat3Val: "15+", stat3Label: "Counties", stat3Sub: "Counties Covered · Nationwide distribution",
+  stat4Val: "100%", stat4Label: "Certified", stat4Sub: "Quality Certified · KVB & KEBS compliant",
+  whyBadge: "Our Commitment",
+  whyTitle: "Why Choose Ultimate Vetserve?",
+  whySubtitle: "Committed to excellence in veterinary pharmaceuticals across every product we supply.",
+  featuredBadge: "Our Products",
+  featuredTitle: "Featured Products",
+  featuredSubtitle: "Click any product to view full details and place a professional inquiry.",
+  newsBadge: "Stay Informed",
+  newsTitle: "News & Insights",
+  newsSubtitle: "The latest in veterinary health management, product updates, and company news.",
+  complianceTitle: "Compliant With & Trusted By",
+  complianceLogos: JSON.stringify(["Kenya Veterinary Board (KVB)","Kenya Bureau of Standards (KEBS)","Dept. of Veterinary Services","KEPHIS","Kenya Dairy Board"]),
+  promoBadge: "Nationwide Delivery Available",
+  promoTiltle: "Premium Veterinary Pharmaceuticals Delivered",
+  promoDesc: "Browse our comprehensive catalog of certified injectables, vaccines, dewormers, and nutritional supplements. Fast dispatch, cold-chain maintained.",
+  promoBtn: "Browse Catalog",
+  promoBtn2: "Call Sales",
+  ctaBadge: "Join the Community",
+  ctaTitle: "Ready to Provide Better Care?",
+  ctaDesc: "Join veterinarians and farmers across Kenya who trust Ultimate Vetserve Limited.",
+  ctaBtn: "Contact Us Now",
+  ctaBtn2: "Call Sales",
 };
 
 const Index = () => {
-  const [productImages, setProductImages] = useState<Record<string, string>>(defaultProductImages);
-
-  const handleProductImageUpload = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setProductImages((prev) => ({ ...prev, [id]: url }));
-  };
+  const { products: allProducts } = useProducts();
+  const { articles: allNews } = useNews();
+  const { homepage = defaultHomepage } = useSiteSettings();
 
   return (
     <div className="min-h-screen font-sans text-gray-900">
       <Navigation />
-      <Hero />
-
-      {/* Species Selector — Image-focused cards */}
-      <section className="py-24 bg-zinc-50/70">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12">
-            <div>
-              <p className="text-[11px] font-bold text-primary uppercase tracking-[0.18em] mb-3">Browse by Animal</p>
-              <h2 className="font-display text-[2.2rem] md:text-[2.8rem] font-extrabold text-zinc-900 tracking-tight leading-[1.1]">
-                Find Products<br className="hidden md:block" /> for Your Animals
-              </h2>
-            </div>
-            <Link to="/products" className="inline-flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline shrink-0 group">
-              View all products
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-            {speciesCategories.map(({ name, tag, count, link, image, accent }) => (
-              <Link
-                key={name}
-                to={link}
-                className="group relative block rounded-2xl overflow-hidden aspect-[3/4] shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-1"
-              >
-                {/* Background Image */}
-                <img
-                  src={image}
-                  alt={name}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                {/* Gradient Overlays */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <div className={`absolute inset-0 bg-gradient-to-t ${accent} to-transparent opacity-60`} />
-
-                {/* Top badge */}
-                <div className="absolute top-4 left-4 right-4">
-                  <span className="inline-block bg-white/15 backdrop-blur-sm border border-white/20 text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
-                    {count}
-                  </span>
-                </div>
-
-                {/* Bottom content */}
-                <div className="absolute bottom-0 left-0 right-0 p-5">
-                  <p className="text-white/60 text-[10px] font-semibold uppercase tracking-widest mb-1.5 line-clamp-1">{tag}</p>
-                  <h3 className="text-white font-black text-xl leading-tight tracking-tight mb-3">{name}</h3>
-                  <div className="flex items-center gap-1.5 text-white/80 text-xs font-bold group-hover:text-white transition-colors">
-                    <span>Explore</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <Hero {...homepage} />
 
       {/* Product Categories */}
       <ProductCategories />
@@ -144,12 +73,10 @@ const Index = () => {
           <div className="grid lg:grid-cols-[1fr_2fr] gap-16 items-start">
             {/* Left — sticky heading block */}
             <div className="lg:sticky lg:top-28">
-              <p className="text-[11px] font-bold text-primary uppercase tracking-[0.18em] mb-4">Our Commitment</p>
-              <h2 id="why-heading" className="font-display text-[2.2rem] md:text-[2.8rem] font-extrabold text-zinc-900 tracking-tight leading-[1.1] mb-5">
-                Why Choose<br />Ultimate Vetserve
-              </h2>
+              <p className="text-[11px] font-bold text-primary uppercase tracking-[0.18em] mb-4">{homepage.whyBadge}</p>
+              <h2 id="why-heading" className="font-display text-[2.2rem] md:text-[2.8rem] font-extrabold text-zinc-900 tracking-tight leading-[1.1] mb-5" dangerouslySetInnerHTML={{ __html: homepage.whyTitle }} />
               <p className="text-zinc-400 leading-[1.75] text-[15px] mb-8 max-w-[280px]">
-                Committed to excellence in veterinary pharmaceuticals across every product we supply.
+                {homepage.whySubtitle}
               </p>
               <Link to="/about">
                 <Button className="bg-primary hover:bg-primary/90 rounded-full px-7 font-semibold gap-2 shadow-sm hover:shadow-primary transition-all">
@@ -188,11 +115,11 @@ const Index = () => {
       </section>
 
       {/* Stats */}
-      <SocialProof />
+      <SocialProof {...homepage} />
 
       {/* Featured Products */}
       {(() => {
-        const featured = getFeaturedProducts().slice(0, 4);
+        const featured = allProducts.filter((p) => p.featured && p.visible !== false).slice(0, 4);
         const ICONS: Record<string, React.ElementType> = {
           "Injectables": Syringe, "Boluses & De-wormers": Pill,
           "Water Solubles": FlaskConical, "Vaccines": TestTube, "Disinfectants & Salves": ShieldCheck,
@@ -202,9 +129,9 @@ const Index = () => {
             <div className="container mx-auto px-4">
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
                 <div>
-                  <p className="text-[11px] font-bold text-primary uppercase tracking-[0.18em] mb-3">Our Products</p>
-                  <h2 id="featured-heading" className="font-display text-[2.2rem] md:text-[2.8rem] font-extrabold text-zinc-900 tracking-tight leading-[1.1]">Featured Products</h2>
-                  <p className="text-zinc-400 text-[15px] mt-3 max-w-md leading-relaxed">Click any product to view full details and place a professional inquiry.</p>
+                  <p className="text-[11px] font-bold text-primary uppercase tracking-[0.18em] mb-3">{homepage.featuredBadge}</p>
+                  <h2 id="featured-heading" className="font-display text-[2.2rem] md:text-[2.8rem] font-extrabold text-zinc-900 tracking-tight leading-[1.1]">{homepage.featuredTitle}</h2>
+                  <p className="text-zinc-400 text-[15px] mt-3 max-w-md leading-relaxed">{homepage.featuredSubtitle}</p>
                 </div>
                 <Link to="/products" className="hidden sm:inline-flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline shrink-0 group">
                   All Products <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -214,7 +141,7 @@ const Index = () => {
                 {featured.map((p) => {
                   const cfg = getCategoryConfig(p.category);
                   const Icon = ICONS[p.category] ?? ShieldCheck;
-                  const imgSrc = productImages[p.id];
+                  const imgSrc = p.imageUrl;
                   return (
                     <Link key={p.id} to={`/products/${p.id}`} className="group block bg-white rounded-2xl border border-zinc-100 hover:border-primary/25 hover:shadow-hover hover:-translate-y-0.5 transition-all duration-300 overflow-hidden">
                       {/* Product image area */}
@@ -222,26 +149,8 @@ const Index = () => {
                         {imgSrc ? (
                           <img src={imgSrc} alt={p.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Icon className={`w-12 h-12 ${cfg.color} opacity-30`} strokeWidth={1} />
-                          </div>
+                          <div className={`w-full h-full ${cfg.bg}`} />
                         )}
-                        {/* Upload overlay */}
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
-                          <span
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              const input = document.getElementById(`product-img-${p.id}`) as HTMLInputElement;
-                              input?.click();
-                            }}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center gap-1.5 bg-white/90 backdrop-blur-sm text-zinc-800 text-[11px] font-bold px-3 py-2 rounded-full hover:bg-white"
-                          >
-                            <Camera className="w-3.5 h-3.5" />
-                            Set Image
-                          </span>
-                          <input id={`product-img-${p.id}`} type="file" accept="image/*" className="hidden" onChange={(e) => handleProductImageUpload(p.id, e)} />
-                        </div>
                         {/* Category badge */}
                         <div className="absolute top-3 left-3">
                           <span className={`text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.color} border border-white/20 backdrop-blur-sm`}>{p.category}</span>
@@ -273,15 +182,15 @@ const Index = () => {
 
       {/* News Preview */}
       {(() => {
-        const latest = getLatestNews(3);
+        const latest = [...allNews].sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()).slice(0, 3);
         return (
           <section className="py-24 bg-white" aria-labelledby="news-heading">
             <div className="container mx-auto px-4">
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
                 <div>
-                  <p className="text-[11px] font-bold text-primary uppercase tracking-[0.18em] mb-3">Stay Informed</p>
-                  <h2 id="news-heading" className="font-display text-[2.2rem] md:text-[2.8rem] font-extrabold text-zinc-900 tracking-tight leading-[1.1]">News & Insights</h2>
-                  <p className="text-zinc-400 text-[15px] mt-3 max-w-md leading-relaxed">The latest in veterinary health management, product updates, and company news.</p>
+                  <p className="text-[11px] font-bold text-primary uppercase tracking-[0.18em] mb-3">{homepage.newsBadge}</p>
+                  <h2 id="news-heading" className="font-display text-[2.2rem] md:text-[2.8rem] font-extrabold text-zinc-900 tracking-tight leading-[1.1]">{homepage.newsTitle}</h2>
+                  <p className="text-zinc-400 text-[15px] mt-3 max-w-md leading-relaxed">{homepage.newsSubtitle}</p>
                 </div>
                 <Link to="/news" className="hidden sm:inline-flex items-center gap-1.5 text-[13px] font-bold text-primary hover:underline shrink-0 group">
                   All Articles <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -326,15 +235,9 @@ const Index = () => {
       {/* Certifications & Trust Band */}
       <section className="py-12 bg-zinc-50 border-y border-zinc-200/70">
         <div className="container mx-auto px-4">
-          <p className="text-center text-[11px] font-bold text-zinc-400 uppercase tracking-[0.18em] mb-8">Compliant With & Trusted By</p>
+          <p className="text-center text-[11px] font-bold text-zinc-400 uppercase tracking-[0.18em] mb-8">{homepage.complianceTitle}</p>
           <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
-            {[
-              "Kenya Veterinary Board (KVB)",
-              "Kenya Bureau of Standards (KEBS)",
-              "Dept. of Veterinary Services",
-              "KEPHIS",
-              "Kenya Dairy Board",
-            ].map((name) => (
+            {(JSON.parse(homepage.complianceLogos ?? "[]") as string[]).map((name: string) => (
               <div key={name} className="inline-flex items-center gap-2 bg-white border border-zinc-200 rounded-full px-4 py-2 text-zinc-600 shadow-xs hover:border-primary/30 hover:text-primary transition-colors">
                 <BadgeCheck className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span className="text-[12.5px] font-semibold">{name}</span>
@@ -358,25 +261,22 @@ const Index = () => {
             <div className="relative z-10 text-white max-w-xl">
               <span className="inline-flex items-center gap-2 text-emerald-400 text-[11px] font-bold uppercase tracking-[0.18em] mb-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                Nationwide Delivery Available
+                {homepage.promoBadge}
               </span>
-              <h3 className="font-display text-[2rem] md:text-[2.6rem] font-extrabold leading-[1.08] tracking-tight mb-4">
-                Premium Veterinary<br />
-                <span className="text-emerald-400">Pharmaceuticals Delivered</span>
-              </h3>
+              <h3 className="font-display text-[2rem] md:text-[2.6rem] font-extrabold leading-[1.08] tracking-tight mb-4" dangerouslySetInnerHTML={{ __html: homepage.promoTiltle }} />
               <p className="text-zinc-300 text-[14.5px] leading-[1.75]">
-                Browse our comprehensive catalog of certified injectables, vaccines, dewormers, and nutritional supplements. Fast dispatch, cold-chain maintained.
+                {homepage.promoDesc}
               </p>
             </div>
             <div className="relative z-10 flex flex-col gap-3 shrink-0 w-full md:w-auto">
               <Link to="/products">
                 <Button size="lg" className="bg-white text-primary hover:bg-zinc-100 active:scale-[0.98] rounded-full px-8 font-bold shadow-xl w-full transition-all">
-                  Browse Catalog <ArrowRight className="ml-2 w-5 h-5" />
+                  {homepage.promoBtn} <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
               <a href="tel:+254724241542">
                 <Button size="lg" variant="outline" className="border-2 border-white/25 text-white hover:bg-white/10 active:scale-[0.98] rounded-full px-8 font-bold bg-transparent w-full transition-all">
-                  <Phone className="mr-2 w-5 h-5" /> Call Sales
+                  <Phone className="mr-2 w-5 h-5" /> {homepage.promoBtn2}
                 </Button>
               </a>
             </div>
@@ -390,22 +290,20 @@ const Index = () => {
         <div className="absolute inset-0 bg-grid-green opacity-50" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-white/5 rounded-full blur-[80px]" />
         <div className="container mx-auto px-4 text-center relative z-10">
-          <p className="text-[11px] font-bold text-white/60 uppercase tracking-[0.18em] mb-5">Join the Community</p>
-          <h2 className="font-display text-[2.4rem] md:text-[3.4rem] font-extrabold text-white tracking-tight leading-[1.08] mb-5 text-balance">
-            Ready to Provide<br />Better Care?
-          </h2>
+          <p className="text-[11px] font-bold text-white/60 uppercase tracking-[0.18em] mb-5">{homepage.ctaBadge}</p>
+          <h2 className="font-display text-[2.4rem] md:text-[3.4rem] font-extrabold text-white tracking-tight leading-[1.08] mb-5 text-balance" dangerouslySetInnerHTML={{ __html: homepage.ctaTitle }} />
           <p className="text-[17px] text-white/70 mb-10 max-w-xl mx-auto leading-[1.75] font-light">
-            Join veterinarians and farmers across Kenya who trust Ultimate Vetserve Limited.
+            {homepage.ctaDesc}
           </p>
           <div className="flex flex-col sm:flex-row gap-3.5 justify-center">
             <Link to="/contact">
               <Button size="lg" className="bg-white text-primary hover:bg-zinc-100 active:scale-[0.98] font-bold px-10 py-6 rounded-full shadow-premium transition-all">
-                Contact Us Now
+                {homepage.ctaBtn}
               </Button>
             </Link>
             <a href="tel:+254724241542">
               <Button size="lg" variant="outline" className="border-2 border-white/30 text-white hover:bg-white/10 active:scale-[0.98] font-bold px-10 py-6 rounded-full bg-transparent transition-all">
-                <Phone className="mr-2 h-5 w-5" /> Call Sales
+                <Phone className="mr-2 h-5 w-5" /> {homepage.ctaBtn2}
               </Button>
             </a>
           </div>
